@@ -53,8 +53,6 @@ public class Main {
 
         JavaRDD<Instance> data__;
 
-        
-
         JavaRDD<String> lines = spark.read().textFile("/home/loezerl-fworks/IdeaProjects/Experimenter/diabetes.arff").javaRDD();
 
         JavaRDD<String> words = lines.flatMap(s -> Arrays.asList(SPACE.split(s)).iterator());
