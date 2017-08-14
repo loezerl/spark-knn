@@ -16,14 +16,15 @@ public class Main {
     private static final Pattern SPACE = Pattern.compile(" ");
     public static void main(String[] args) throws Exception {
 
-        if (args.length < 1) {
-            System.err.println("Usage: JavaWordCount <file>");
-            //System.exit(1);
-        }
+//        if (args.length < 1) {
+//            System.err.println("Usage: JavaWordCount <file>");
+//            //System.exit(1);
+//        }
 
         SparkSession spark = SparkSession
                 .builder()
                 .appName("JavaWordCount")
+                .config("spark.master", "local")
                 .getOrCreate();
 
         JavaRDD<String> lines = spark.read().textFile("/home/loezerl-fworks/IdeaProjects/spark-knn/aux/lucas.txt").javaRDD();

@@ -16,7 +16,7 @@
     <groupId>com.loezerl.sparkknn</groupId>
     <artifactId>spark-knn</artifactId>
     <version>1.0-SNAPSHOT</version>
-
+    <url>http://spark.apache.org/</url>
 
     <dependencies>
         <!-- Prevent our dummy JAR from being included in Spark distributions or uploaded to YARN -->
