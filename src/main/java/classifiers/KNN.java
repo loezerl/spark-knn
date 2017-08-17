@@ -5,11 +5,21 @@ package classifiers;
  */
 
 import java.util.*;
+
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.repl.Main;
+import scala.Tuple2;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
 import util.Similarity;
 import weka.core.NormalizableDistance;
 import weka.core.Instances;
+
+
+import org.apache.spark.api.java.JavaSparkContext;
+
+
 //import util.Pair;
 
 public class KNN extends Classifier{
@@ -46,6 +56,29 @@ public class KNN extends Classifier{
          * - É muito provavel que as estruturas auxiliares daqui sejam exclusivas de cada framework.
          *
          * **/
+
+        JavaSparkContext sc = new JavaSparkContext(Main.conf());
+
+        //Cria uma estrutura JavaRDD utilizando a List<Instance> Window
+        JavaRDD<Instance> W_instances = sc.parallelize(Window);
+
+        //Calcula a distancia entre a instance e as instancias presentes na janela
+        JavaPairRDD<Instance, Double> distances = W_instances.mapToPair(s -> new Tuple2<>(s, Similarity.EuclideanDistance(instance, s)));
+
+        //Ordena as instancias
+        distances = distances.mapToPair(s -> s.swap()).sortByKey().mapToPair(x -> x.swap());
+
+        List<Tuple2<Instance, Double>> K_neighbours = distances.take(K);
+
+
+        int[] major_vote = new int[instance.classAttribute().numValues()];
+
+        for (Tuple2<Instance, Double> tuple : K_neighbours){
+            int aux = (int)tuple._1().classValue();
+            major_vote[aux]++;
+        }
+
+        /** Falta pegar o mais votado e testar a acuracia **/
 
 
         //Aqui eu devo iterar a janela e calcular a distancia pra cada ponto, em seguida pegar os K vizinhos mais proximos e realizar um voto majoritario.

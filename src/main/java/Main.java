@@ -12,6 +12,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.SparkConf;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -27,6 +28,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 
 public class Main {
     private static final Pattern SPACE = Pattern.compile("\n");
+    public static SparkConf conf;
     public static void main(String[] args) throws Exception {
 
 //        if (args.length < 1) {
@@ -40,22 +42,26 @@ public class Main {
 //                .config("spark.master", "local")
 //                .getOrCreate();
 
-        SparkConf conf = new SparkConf().setAppName("org.sparkexample.WordCount").setMaster("local");
+        //local[2] - seta o numero de threads
+        SparkConf conf = new SparkConf().setAppName("org.sparkexample.WordCount").setMaster("local[2]").set("spark.cores.max", "4");
         JavaSparkContext sc = new JavaSparkContext(conf);
 
 
         ///////////////////////////////////////// WEKA ARFF LOADER
         DataSource source = new DataSource("/home/loezerl-fworks/IdeaProjects/Experimenter/diabetes.arff");
         Instances data = source.getDataSet();
-        if(data.classIndex() == -1){
+        if (data.classIndex() == -1) {
             data.setClassIndex(data.numAttributes() - 1);
         }
 
+
         Instance auxI = data.get(10);
+        auxI.classAttribute().numValues();
+        System.out.println(auxI.classAttribute().numValues());
         ////////////////////////
         List<Instance> ListInst = new Vector<>();
 
-        for (int i =0; i< data.numInstances(); i++){
+        for (int i = 0; i < data.numInstances(); i++) {
             ListInst.add(data.get(i));
         }
 
@@ -63,11 +69,35 @@ public class Main {
 
         JavaPairRDD<Instance, Double> distances = dataset.mapToPair(s -> new Tuple2<>(s, Similarity.EuclideanDistance(auxI, s)));
 
+        distances = distances.mapToPair(s -> s.swap()).sortByKey().mapToPair(x -> x.swap());
+
+        int k = 7;
+
+        List<Tuple2<Instance, Double>> k_neighbours = distances.take(k);
+
+        //JavaPairRDD<Instance, Double> cc =
+
         List<Tuple2<Instance, Double>> output = distances.collect();
 
-        for (Tuple2<?,?> tuple : output){
-            System.out.println(tuple._1() + " : " + tuple._2());
+        List<Integer> major_vote = new ArrayList<Integer>(auxI.classAttribute().numValues());
+
+        int[] major_vote2 = new int[auxI.classAttribute().numValues()];
+
+//        for(Object obj : major_vote){
+//            System.out.println(obj);
+//        }
+
+
+        for (Tuple2<Instance, Double> tuple : k_neighbours){
+            int aux = (int)tuple._1().classValue();
+            major_vote2[aux]++;
+            System.out.println(tuple._1().classValue() + " : " + tuple._2());
         }
+
+        for(int i=0; i< major_vote2.length; i++){
+            System.out.println(major_vote2[i]);
+        }
+        sc.stop();
 
 //        JavaRDD<String> lines = spark.read().textFile("/home/loezerl-fworks/IdeaProjects/Experimenter/diabetes.arff").javaRDD();
 //
