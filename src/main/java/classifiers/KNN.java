@@ -4,33 +4,27 @@ package classifiers;
  * Created by loezerl-fworks on 14/08/17.
  */
 
-import java.util.*;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.repl.Main;
-import scala.Tuple2;
-import weka.core.EuclideanDistance;
-import weka.core.Instance;
-import util.Similarity;
-import weka.core.NormalizableDistance;
-import weka.core.Instances;
-
-
 import org.apache.spark.api.java.JavaSparkContext;
+import scala.Tuple2;
+import util.Similarity;
+import weka.core.Instance;
 
+import java.util.ArrayList;
+import java.util.List;
 
-//import util.Pair;
-
-public class KNN extends Classifier{
+public class KNN implements Classifier{
     private int K;
     private int WindowSize;
     private String DistanceFunction;
     private List<Instance> Window;
+    private JavaSparkContext sc;
 
-    public KNN(int kdistance, int wsize, String function){
+    public KNN(int kdistance, int wsize, String function, JavaSparkContext sc_){
         K = kdistance;
         WindowSize = wsize;
+        sc = sc_;
         if(function == "euclidean"){
             DistanceFunction = "euclidean";
         }
@@ -57,10 +51,11 @@ public class KNN extends Classifier{
          *
          * **/
 
-        JavaSparkContext sc = new JavaSparkContext(Main.conf());
 
         //Cria uma estrutura JavaRDD utilizando a List<Instance> Window
         JavaRDD<Instance> W_instances = sc.parallelize(Window);
+
+
 
         //Calcula a distancia entre a instance e as instancias presentes na janela
         JavaPairRDD<Instance, Double> distances = W_instances.mapToPair(s -> new Tuple2<>(s, Similarity.EuclideanDistance(instance, s)));
@@ -78,38 +73,21 @@ public class KNN extends Classifier{
             major_vote[aux]++;
         }
 
-        /** Falta pegar o mais votado e testar a acuracia **/
+        int bestclass_dist = -600;
+        int bestclass_label = -600;
 
+        for(int i=0; i< major_vote.length; i++){
+            if(major_vote[i] > bestclass_dist){
+                bestclass_label = i;
+                bestclass_dist = major_vote[i];
+            }
+        }
 
-        //Aqui eu devo iterar a janela e calcular a distancia pra cada ponto, em seguida pegar os K vizinhos mais proximos e realizar um voto majoritario.
-//        List<Pair> Neighbors = new Vector<>();
+        int targetclass = (int)instance.classValue();
 
-//        Pair[] Neighbors = new Pair[Window.size()];
-//        //Neighbors[0] = new Pair(10, 10.0);
-//
-//        for (int i=0; i< Window.size(); i++){
-//            double dist = Similarity.EuclideanDistance(instance, Window.get(i));
-//            Pair pair_ = new Pair(i, dist);
-////            Neighbors.add(pair_);
-//            Neighbors[i] = pair_;
-//        }
-//        List<Integer> KNeighbors = new Vector<>(K);
-//
-//        // Ordena de forma decrescente
-//        Arrays.sort(Neighbors, (Pair b1, Pair b2) -> {
-//            if (b1.getValue() > b1.getValue()) return -1;
-//            if (b1.getValue() < b2.getValue()) return 1;
-//            return 0;
-//        });
+        if(targetclass == bestclass_label)
+            return true;
 
-
-
-        //Percorre o vetor e retira as K menores distancias
-//        for(int i =0; i< Neighbors.size; i++){
-//
-//            System.exit(1);
-//        }
-        //Realiza o voto majoritario entre os K vizinhos
         return false;
     }
 

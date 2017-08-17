@@ -29,6 +29,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 public class Main {
     private static final Pattern SPACE = Pattern.compile("\n");
     public static SparkConf conf;
+    public static JavaSparkContext sc;
     public static void main(String[] args) throws Exception {
 
 //        if (args.length < 1) {
@@ -43,8 +44,8 @@ public class Main {
 //                .getOrCreate();
 
         //local[2] - seta o numero de threads
-        SparkConf conf = new SparkConf().setAppName("org.sparkexample.WordCount").setMaster("local[2]").set("spark.cores.max", "4");
-        JavaSparkContext sc = new JavaSparkContext(conf);
+        conf = new SparkConf().setAppName("org.sparkexample.WordCount").setMaster("local[2]").set("spark.cores.max", "4");
+        sc = new JavaSparkContext(conf);
 
 
         ///////////////////////////////////////// WEKA ARFF LOADER
@@ -94,9 +95,22 @@ public class Main {
             System.out.println(tuple._1().classValue() + " : " + tuple._2());
         }
 
+        int bestclass_d = -600;
+        int bestclass = -600;
+
         for(int i=0; i< major_vote2.length; i++){
+
+            if(major_vote2[i] > bestclass_d){
+                bestclass = i;
+                bestclass_d = major_vote2[i];
+            }
             System.out.println(major_vote2[i]);
         }
+
+        System.out.println("Class: " + bestclass);
+
+
+
         sc.stop();
 
 //        JavaRDD<String> lines = spark.read().textFile("/home/loezerl-fworks/IdeaProjects/Experimenter/diabetes.arff").javaRDD();
