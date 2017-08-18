@@ -20,6 +20,7 @@ public class Experimenter {
     private static final Pattern SPACE = Pattern.compile("\n");
     public static SparkConf conf;
     public static JavaSparkContext sc;
+    
     public static void main(String[] args) throws Exception {
 
         //        if (args.length < 1) {
@@ -34,9 +35,9 @@ public class Experimenter {
 //                .getOrCreate();
 
         //local[2] - seta o numero de threads
-        conf = new SparkConf().setAppName("spark-knn").setMaster("local[2]").set("spark.cores.max", "4");
+        conf = new SparkConf().setAppName("spark-knn").setMaster("local[4]").set("spark.cores.max", "4");
         sc = new JavaSparkContext(conf);
-
+        sc.setLogLevel("ERROR");
 
         ///////////////////////////////////////// WEKA ARFF LOADER
         DataSource source = new DataSource("/home/loezerl-fworks/IdeaProjects/Experimenter/diabetes.arff");
@@ -47,17 +48,13 @@ public class Experimenter {
         ////////////////////////
 
         Classifier myClassifier = new KNN(7, 30, "euclidean", sc);
-
         Evaluator myEvaluator = new Prequential(myClassifier, data);
+        myEvaluator.run();
 
         sc.stop();
     }
 
     private boolean parseParameters(){
         return true;
-    }
-
-    public void run(){
-
     }
 }

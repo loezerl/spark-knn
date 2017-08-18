@@ -14,17 +14,16 @@ import weka.core.Instance;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KNN implements Classifier{
+public class KNN extends Classifier{
     private int K;
     private int WindowSize;
     private String DistanceFunction;
     private List<Instance> Window;
-    private JavaSparkContext sc;
 
     public KNN(int kdistance, int wsize, String function, JavaSparkContext sc_){
+        super(sc_);
         K = kdistance;
         WindowSize = wsize;
-        sc = sc_;
         if(function == "euclidean"){
             DistanceFunction = "euclidean";
         }
@@ -35,7 +34,7 @@ public class KNN implements Classifier{
         Window = new ArrayList<>(wsize);
     }
 
-    // Aqui vai receber o dado sem label, com label e a predicao do classificador e ira retornar acerto (true) erro (false)
+    @Override
     public boolean test(Instance instance) {
         /**
          * Essa função vai receber uma instancia.
@@ -43,19 +42,11 @@ public class KNN implements Classifier{
          * Após calcular a distancia entre os pontos, é necessário selecionar as K instancias mais próximas.
          * Com um vetor com as K instancias mais próximas, opta-se por realizar um voto majoritário entre as classes de cada instancia.
          * Assim, verifica-se se a classe mais votada é igual a classe da instancia parametro, retornando True ou False.
-         *
-         * Notas:
-         * - Tomar cuidado caso a janela esteja vazia e não haja Instancias para comparar, contabilizando um erro.
-         * - Deixar o código mais flexível possível em relação aos tamanhos das bases.
-         * - É muito provavel que as estruturas auxiliares daqui sejam exclusivas de cada framework.
-         *
          * **/
 
 
         //Cria uma estrutura JavaRDD utilizando a List<Instance> Window
         JavaRDD<Instance> W_instances = sc.parallelize(Window);
-
-
 
         //Calcula a distancia entre a instance e as instancias presentes na janela
         JavaPairRDD<Instance, Double> distances = W_instances.mapToPair(s -> new Tuple2<>(s, Similarity.EuclideanDistance(instance, s)));
@@ -63,6 +54,7 @@ public class KNN implements Classifier{
         //Ordena as instancias
         distances = distances.mapToPair(s -> s.swap()).sortByKey().mapToPair(x -> x.swap());
 
+        //Pega os K vizinhos mais próximos
         List<Tuple2<Instance, Double>> K_neighbours = distances.take(K);
 
 
@@ -91,20 +83,18 @@ public class KNN implements Classifier{
         return false;
     }
 
+    @Override
     public void train(Instance data) {
         /**
          * Atente-se aqui em relação a exclusão mútua.
          * É provavel que as estruturas de array dos frameworks possuam mutex interno, mas é necessário verificar isso em cada framework.
          * */
-
-        System.out.println(Window.size());
-        if (Window.size() == 0) {
+        if (Window.size() < WindowSize) {
             Window.add(data);
         }
         else{
             Window.remove(0);
             Window.add(data);
         }
-        System.out.println(Window.size());
     }
 }

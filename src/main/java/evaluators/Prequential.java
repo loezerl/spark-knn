@@ -4,6 +4,7 @@ package evaluators;
  * Created by loezerl-fworks on 14/08/17.
  */
 import classifiers.Classifier;
+import weka.core.Instance;
 import weka.core.Instances;
 
 
@@ -12,9 +13,11 @@ public class Prequential extends Evaluator{
     private int miss=0;
     private int[][] confusion_matrix;
 
-    public Prequential(Classifier _classifier, Instances _data){
-        super(_classifier, _data);
+    public Prequential(Classifier _classifier, Instances data){
+        super(_classifier, data);
     }
+
+    @Override
     public void run(){
         /**
          * Essa função é responsável por gerenciar a etapa de treino e teste do classificador.
@@ -26,5 +29,14 @@ public class Prequential extends Evaluator{
          * - Imprimir um relatório log final com os resultados, aka acuracia, calculos de erro (kappa), etc..
          *
          * */
+        for (Instance example : data_source){
+            if(mClassifier.test(example))
+                confirm++;
+            else
+                miss++;
+            mClassifier.train(example);
+        }
+
+        System.out.println("Total acertos: " + confirm + " Total erros: " + miss);
     }
 }
