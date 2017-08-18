@@ -3,8 +3,7 @@
 Repositório responsável pela criação do KNN dentro do framework Spark.
 
 ### Notas:
-- Implementar as funções Prequencial e Experimenter.
-- Verificar se a função Evaluator não vira uma Interface.
-- Realizar os testes com a base pequena.
+- Prequential: Popular a Matriz de Confusão.
+- Experimenter: Parser dos parametros.
+- Descrever as funcionalidades de cada função.
 - Ver como carrega um arff gigante com as bibliotecas do MOA.
-
