@@ -6,7 +6,8 @@ package evaluators;
 import classifiers.Classifier;
 import weka.core.Instance;
 import weka.core.Instances;
-
+import moa.streams.ArffFileStream;
+import moa.core.InstanceExample;
 
 public class Prequential extends Evaluator{
     private int confirm=0;
