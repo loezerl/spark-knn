@@ -9,10 +9,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 import util.Similarity;
-import weka.core.Instance;
+import com.yahoo.labs.samoa.instances.Instance;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class KNN extends Classifier{
     private int K;
@@ -20,15 +19,15 @@ public class KNN extends Classifier{
     private String DistanceFunction;
     private List<Instance> Window;
 
-    public KNN(int kdistance, int wsize, String function, JavaSparkContext sc_){
+    public KNN(int kneighbours, int wsize, String function, JavaSparkContext sc_){
         super(sc_);
-        K = kdistance;
+        K = kneighbours;
         WindowSize = wsize;
-        if(function == "euclidean"){
+        if(function.equals("euclidean")){
             DistanceFunction = "euclidean";
         }
         else{
-            System.out.println("Distancias disponiveis: euclidean");
+            System.err.println("Distancias disponiveis: euclidean");
             System.exit(1);
         }
         Window = new ArrayList<>(wsize);
@@ -58,26 +57,34 @@ public class KNN extends Classifier{
         List<Tuple2<Instance, Double>> K_neighbours = distances.take(K);
 
 
-        int[] major_vote = new int[instance.classAttribute().numValues()];
+
+        Map majorvote = new HashMap<Double, Integer>();
 
         for (Tuple2<Instance, Double> tuple : K_neighbours){
-            int aux = (int)tuple._1().classValue();
-            major_vote[aux]++;
-        }
-
-        int bestclass_dist = -600;
-        int bestclass_label = -600;
-
-        for(int i=0; i< major_vote.length; i++){
-            if(major_vote[i] > bestclass_dist){
-                bestclass_label = i;
-                bestclass_dist = major_vote[i];
+            if(majorvote.containsKey(tuple._1().classValue())){
+                Integer aux = (Integer)majorvote.get(tuple._1().classValue());
+                majorvote.put(tuple._1().classValue(), aux + 1);
+            }else{
+                majorvote.put(tuple._1().classValue(), 1);
             }
         }
 
-        int targetclass = (int)instance.classValue();
+        Integer bestclass_vote = -600;
+        Double bestclass_label = -600.0;
 
-        if(targetclass == bestclass_label)
+        Iterator<Map.Entry<Double, Integer>> it = majorvote.entrySet().iterator();
+
+        while(it.hasNext()){
+            Map.Entry<Double, Integer> pair = it.next();
+            if(pair.getValue() > bestclass_vote){
+                bestclass_label = pair.getKey();
+                bestclass_vote = pair.getValue();
+            }
+        }
+
+        Double targetclass = instance.classValue();
+
+        if(targetclass.equals(bestclass_label))
             return true;
 
         return false;

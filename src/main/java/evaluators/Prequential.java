@@ -4,17 +4,15 @@ package evaluators;
  * Created by loezerl-fworks on 14/08/17.
  */
 import classifiers.Classifier;
-import weka.core.Instance;
-import weka.core.Instances;
 import moa.streams.ArffFileStream;
-import moa.core.InstanceExample;
+import com.yahoo.labs.samoa.instances.Instance;
 
 public class Prequential extends Evaluator{
     private int confirm=0;
     private int miss=0;
     private int[][] confusion_matrix;
 
-    public Prequential(Classifier _classifier, Instances data){
+    public Prequential(Classifier _classifier, ArffFileStream data){
         super(_classifier, data);
     }
 
@@ -30,13 +28,13 @@ public class Prequential extends Evaluator{
          * - Imprimir um relatório log final com os resultados, aka acuracia, calculos de erro (kappa), etc..
          *
          * */
-        for (Instance example : data_source){
-            if(mClassifier.test(example))
-                confirm++;
-            else
-                miss++;
+        while(data_source.hasMoreInstances()){
+            Instance example = data_source.nextInstance().getData();
+            if(mClassifier.test(example)){ confirm++; }
+            else{miss++;}
             mClassifier.train(example);
         }
+
 
         System.out.println("Total acertos: " + confirm + " Total erros: " + miss);
     }

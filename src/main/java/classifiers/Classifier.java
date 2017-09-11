@@ -1,7 +1,7 @@
 package classifiers;
 
 import org.apache.spark.api.java.JavaSparkContext;
-import weka.core.Instance;
+import com.yahoo.labs.samoa.instances.Instance;
 
 /**
  * Created by loezerl-fworks on 14/08/17.
