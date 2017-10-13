@@ -7,6 +7,8 @@ package classifiers;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.storage.StorageLevel;
+import scala.Array;
 import scala.Tuple2;
 import util.Similarity;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -43,6 +45,7 @@ public class KNN extends Classifier{
          * Assim, verifica-se se a classe mais votada é igual a classe da instancia parametro, retornando True ou False.
          * **/
 
+        if(Window.size() <= 0){return false;}
 
         //Cria uma estrutura JavaRDD utilizando a List<Instance> Window
         JavaRDD<Instance> W_instances = sc.parallelize(Window);
@@ -50,15 +53,34 @@ public class KNN extends Classifier{
         //Calcula a distancia entre a instance e as instancias presentes na janela
         JavaPairRDD<Instance, Double> distances = W_instances.mapToPair(s -> new Tuple2<>(s, Similarity.EuclideanDistance(instance, s)));
 
-        //Ordena as instancias
-        distances = distances.mapToPair(s -> s.swap()).sortByKey().mapToPair(x -> x.swap());
+        //Transforma o JavaRDD em uma lista de tuplas
+        List<Tuple2<Instance, Double>> distances_list = distances.collect();
 
-        //Pega os K vizinhos mais próximos
-        List<Tuple2<Instance, Double>> K_neighbours = distances.take(K);
+        List<Tuple2<Instance, Double>> K_neighbours = new ArrayList<>(K);
 
+        //Insere os K vizinhos numa lista
+        int i = 0;
+        int index=0;
+        for (Tuple2<Instance, Double> tuple : distances_list){
+            if(i < K){
+                i++;
+                K_neighbours.add(tuple);
+            }
+            else{
+                index=0;
+                for(Tuple2<Instance, Double> tuple_k : K_neighbours){
+                    if(tuple._2() < tuple_k._2()){
+                        K_neighbours.remove(index);
+                        K_neighbours.add(index, tuple);
+                        break;
+                    }
+                    index++;
+                }
+            }
+        }
 
-
-        Map majorvote = new HashMap<Double, Integer>();
+        //Calculo do voto majoritario
+        Map majorvote = new HashMap<Double, Integer>(instance.numClasses());
 
         for (Tuple2<Instance, Double> tuple : K_neighbours){
             if(majorvote.containsKey(tuple._1().classValue())){
@@ -91,11 +113,7 @@ public class KNN extends Classifier{
     }
 
     @Override
-    public void train(Instance data) {
-        /**
-         * Atente-se aqui em relação a exclusão mútua.
-         * É provavel que as estruturas de array dos frameworks possuam mutex interno, mas é necessário verificar isso em cada framework.
-         * */
+    public synchronized void train(Instance data) {
         if (Window.size() < WindowSize) {
             Window.add(data);
         }
