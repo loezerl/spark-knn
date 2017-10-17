@@ -16,6 +16,6 @@ public class Evaluator{
         mClassifier = _classifier;
         data_source = _data;
     }
-    public void run(){}
+    public void run(long milliseconds){}
 }
 
